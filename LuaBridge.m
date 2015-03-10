@@ -1,4 +1,4 @@
-//
+﻿//
 //  LuaState.m
 //  Lua-Objective-C Bridge
 //
@@ -475,7 +475,12 @@ void luabridge_push_object(lua_State *L, id obj)
     } else if ([obj isKindOfClass:[NSString class]]) {
         lua_pushstring(L, [obj cStringUsingEncoding:NSUTF8StringEncoding]);
     } else if ([obj isKindOfClass:[NSNumber class]]) {
-        lua_pushnumber(L, [obj doubleValue]);
+        /* if this value is boolean type then push boolean*/
+        if (strcmp([obj objCType], @encode(BOOL)) == 0) {
+            lua_pushboolean(L, [obj boolValue]);
+        } else {
+            lua_pushnumber(L, [obj doubleValue]);
+        }
     } else if ([obj isKindOfClass:[NSNull class]]) {
         lua_pushnil(L);
 //    } else if ([obj isKindOfClass:[PointerObject class]]) {
