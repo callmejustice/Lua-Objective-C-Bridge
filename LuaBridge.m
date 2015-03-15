@@ -59,6 +59,9 @@ int finalize_object(lua_State *L)
         lua_setglobal(L, "objc");
 #undef ADDMETHOD
         
+        lua_pushlightuserdata(L, &self);
+        lua_setglobal(L, "__luaBridge");
+        
         NSString *path = [[NSBundle mainBundle] pathForResource:@"utils" ofType:@"lua"];
         if (luaL_dofile(L, [path UTF8String])) {
             const char *err = lua_tostring(L, -1);
@@ -458,6 +461,33 @@ static void lua_exception_handler(NSException *exception)
     luabridge_push_object(L, obj);
 }
 
+- (bool) registerLuaFunc:(Class)cls selector:(NSString*)sel resigterName:(NSString*) rn {
+    
+    if (![cls instancesRespondToSelector:NSSelectorFromString(sel)]) {
+        return false;
+    }
+    _LuaFunction* __weak *userdata = (_LuaFunction* __weak *)lua_newuserdata(L, sizeof(_LuaFunction*));
+    (*userdata).cls = cls;
+    (*userdata).selName = sel;
+    
+    /* Creates metatable */
+    lua_newtable( L );
+    
+    /* pushes the __index metamethod */
+    lua_pushstring( L , "__call" );
+    lua_pushcfunction( L , &luaFunctionCall );
+    lua_rawset( L , -3 );
+    
+    if(lua_setmetatable( L, -2 ) == 0) {
+        return false;
+    }
+    
+    lua_setglobal(L, [rn UTF8String]);
+    
+    return true;
+}
+
+
 @end
 
 @implementation LuaObjectReference
@@ -466,6 +496,10 @@ static void lua_exception_handler(NSException *exception)
 {
     luaL_unref(self.L, LUA_REGISTRYINDEX, self.ref);
 }
+@end
+
+@implementation _LuaFunction
+@synthesize selName,cls;
 @end
 
 void luabridge_push_object(lua_State *L, id obj)
@@ -667,4 +701,69 @@ int luafunc_extract (lua_State *L)
     }
 
     return retnum;
+}
+
+id get_param(lua_State * L, int idx) {
+    id ret = nil;
+    int type = lua_type(L, idx);
+    NSException *ex = nil;
+    switch (type) {
+        case LUA_TNIL:
+            NSLog(@"nil");
+            break;
+        case LUA_TNUMBER:
+            ret = [NSNumber numberWithDouble:lua_tonumber(L, idx)];
+            break;
+        case LUA_TBOOLEAN:
+            ret = [NSNumber numberWithBool:lua_toboolean(L, idx)];            break;
+        case LUA_TSTRING:
+            ret = [NSString stringWithCString:lua_tostring(L, idx) encoding:NSUTF8StringEncoding];
+            break;
+        case LUA_TTABLE:
+            ex = [[NSException alloc] initWithName:@"LUAException" reason:@"argument is a lua table" userInfo:nil];
+            @throw ex;
+            break;
+        case LUA_TFUNCTION:
+            ex = [[NSException alloc] initWithName:@"LUAException" reason:@"argument is a lua function" userInfo:nil];
+            @throw ex;
+            break;
+        case LUA_TUSERDATA:
+            ret = *( (id __unsafe_unretained *)lua_touserdata( L , 1 ) );
+            break;
+        case LUA_TTHREAD:
+            ex = [[NSException alloc] initWithName:@"LUAException" reason:@"argument is a lua thread" userInfo:nil];
+            @throw ex;
+            break;
+        case LUA_TLIGHTUSERDATA:
+            ret = *( (id __unsafe_unretained *)lua_touserdata( L , 1 ) );
+            break;
+        default:
+            break;
+    }
+    return ret;
+}
+
+LuaBridge* __weak * getBridgeFromState( lua_State * L) {
+    lua_getglobal(L, "");
+    return (LuaBridge* __weak*)lua_touserdata(L, -1);
+}
+
+/**
+ callback of register function to lua
+ */
+int luaFunctionCall( lua_State * L ) {
+    _LuaFunction* __weak *userdata = (_LuaFunction * __weak*)lua_touserdata( L , 1 );
+    
+    int argNum = lua_gettop(L);
+    NSMutableArray* stack = [[NSMutableArray alloc] init];
+    for(int i=argNum;i>1;i--) {
+        [stack addObject:get_param(L, i)];
+    }
+    [[[_LuaFunction alloc] init] cls];
+    [stack addObject:[*userdata cls]];
+    [stack addObject:[*userdata selName]];
+    LuaBridge* luaBridge = *getBridgeFromState(L);
+    [luaBridge op_call:stack];
+    [luaBridge pushObject:[stack lastObject]];
+    return 1;
 }

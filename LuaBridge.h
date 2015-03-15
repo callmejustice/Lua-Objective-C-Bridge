@@ -35,4 +35,11 @@ extern "C" {
 @property lua_State *L;
 @end
 
+@interface _LuaFunction : NSObject
+@property(readwrite, nonatomic) NSString* selName;
+@property(readwrite, nonatomic) Class cls;
+@end
+
 void luabridge_push_object(lua_State *L, id obj);
+
+int luaFunctionCall( lua_State * L );
