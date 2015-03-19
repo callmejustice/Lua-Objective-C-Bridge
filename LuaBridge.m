@@ -59,8 +59,8 @@ int finalize_object(lua_State *L)
         lua_setglobal(L, "objc");
 #undef ADDMETHOD
         
-        lua_pushlightuserdata(L, &self);
-        lua_setglobal(L, "__luaBridge");
+        //lua_pushlightuserdata(L, &self);
+        //lua_setglobal(L, "__luaBridge");
         
         NSString *path = [[NSBundle mainBundle] pathForResource:@"utils" ofType:@"lua"];
         if (luaL_dofile(L, [path UTF8String])) {
@@ -461,7 +461,7 @@ static void lua_exception_handler(NSException *exception)
     luabridge_push_object(L, obj);
 }
 
-- (bool) registerLuaFunc:(Class)cls selector:(NSString*)sel resigterName:(NSString*) rn {
+/*- (bool) registerLuaFunc:(Class)cls selector:(NSString*)sel resigterName:(NSString*) rn {
     
     if (![cls instancesRespondToSelector:NSSelectorFromString(sel)]) {
         return false;
@@ -470,10 +470,10 @@ static void lua_exception_handler(NSException *exception)
     (*userdata).cls = cls;
     (*userdata).selName = sel;
     
-    /* Creates metatable */
+    //Creates metatable
     lua_newtable( L );
     
-    /* pushes the __index metamethod */
+    // pushes the __index metamethod
     lua_pushstring( L , "__call" );
     lua_pushcfunction( L , &luaFunctionCall );
     lua_rawset( L , -3 );
@@ -485,7 +485,7 @@ static void lua_exception_handler(NSException *exception)
     lua_setglobal(L, [rn UTF8String]);
     
     return true;
-}
+}*/
 
 
 @end
@@ -498,9 +498,9 @@ static void lua_exception_handler(NSException *exception)
 }
 @end
 
-@implementation _LuaFunction
+/*@implementation _LuaFunction
 @synthesize selName,cls;
-@end
+@end*/
 
 void luabridge_push_object(lua_State *L, id obj)
 {
@@ -509,7 +509,7 @@ void luabridge_push_object(lua_State *L, id obj)
     } else if ([obj isKindOfClass:[NSString class]]) {
         lua_pushstring(L, [obj cStringUsingEncoding:NSUTF8StringEncoding]);
     } else if ([obj isKindOfClass:[NSNumber class]]) {
-        /* if this value is boolean type then push boolean*/
+        // if this value is boolean type then push boolean
         if (strcmp([obj objCType], @encode(BOOL)) == 0) {
             lua_pushboolean(L, [obj boolValue]);
         } else {
@@ -703,7 +703,7 @@ int luafunc_extract (lua_State *L)
     return retnum;
 }
 
-id get_param(lua_State * L, int idx) {
+/*id get_param(lua_State * L, int idx) {
     id ret = nil;
     int type = lua_type(L, idx);
     NSException *ex = nil;
@@ -741,17 +741,17 @@ id get_param(lua_State * L, int idx) {
             break;
     }
     return ret;
-}
+}*/
 
-LuaBridge* __weak * getBridgeFromState( lua_State * L) {
+/*LuaBridge* __weak * getBridgeFromState( lua_State * L) {
     lua_getglobal(L, "");
     return (LuaBridge* __weak*)lua_touserdata(L, -1);
-}
+}*/
 
 /**
  callback of register function to lua
  */
-int luaFunctionCall( lua_State * L ) {
+/*int luaFunctionCall( lua_State * L ) {
     _LuaFunction* __weak *userdata = (_LuaFunction * __weak*)lua_touserdata( L , 1 );
     
     int argNum = lua_gettop(L);
@@ -766,4 +766,4 @@ int luaFunctionCall( lua_State * L ) {
     [luaBridge op_call:stack];
     [luaBridge pushObject:[stack lastObject]];
     return 1;
-}
+}*/

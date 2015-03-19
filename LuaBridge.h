@@ -7,6 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,6 +15,7 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
 
 @interface LuaBridge : NSObject
 {
@@ -28,6 +30,7 @@ extern "C" {
 - (void)operate:(NSString*)opname onStack:(NSMutableArray*)stack;
 - (void)op_call:(NSMutableArray*)stack;
 - (void)op_cgrectmake:(NSMutableArray*)stack;
+/*- (bool) registerLuaFunc:(Class)cls selector:(NSString*)sel resigterName:(NSString*) rn;*/
 @end
 
 @interface LuaObjectReference : NSObject
@@ -35,11 +38,11 @@ extern "C" {
 @property lua_State *L;
 @end
 
-@interface _LuaFunction : NSObject
+/*@interface _LuaFunction : NSObject
 @property(readwrite, nonatomic) NSString* selName;
 @property(readwrite, nonatomic) Class cls;
-@end
+@end*/
 
 void luabridge_push_object(lua_State *L, id obj);
 
-int luaFunctionCall( lua_State * L );
+//int luaFunctionCall( lua_State * L );
